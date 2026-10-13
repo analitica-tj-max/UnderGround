@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>#LaJoven Underground Tour</title>
+  <meta name="description" content="Regístrate y reserva tu cupo para los conciertos de #LaJoven Underground Tour, la franja de música de cámara de la Filarmónica Joven de Colombia.">
+  <meta property="og:title" content="#LaJoven Underground Tour">
+  <meta property="og:description" content="Regístrate y reserva tu cupo para los conciertos de la Filarmónica Joven de Colombia.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="icono-lajoven-512.png">
+  <link rel="apple-touch-icon" href="icono-lajoven-512.png">
+  <!--
+    PÁGINA PUENTE · #LaJoven Underground Tour
+    El navegador interno de Instagram/Facebook/TikTok en iPhone no carga las páginas de
+    Google Apps Script (quedan en blanco). Esta página va en la historia de Instagram y:
+      · En un navegador normal → pasa directo al sistema (no se nota).
+      · Dentro de Instagram en iPhone → intenta abrir Safari; si no, muestra cómo hacerlo.
+      · Dentro de Instagram en Android → abre Chrome.
+    Todo lo que venga después del "?" se pasa al sistema. Ejemplos:
+      .../?view=registro      → formulario de registro
+      .../                    → reserva del evento activo
+  -->
+  <style>
+    :root { --naranja: #ff671b; --naranja2: #ff8535; --acento: #ffb535; --gris: #78787b; --fondo: #efefef; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--fondo); color: #111; -webkit-font-smoothing: antialiased; }
+    .hero { position: relative; overflow: hidden; background: #000; color: #fff; padding: 28px 22px 84px; }
+    .hero::before { content: ''; position: absolute; top: -90px; right: -70px; width: 260px; height: 260px; border-radius: 50%;
+      background: rgba(255, 103, 27, .45); filter: blur(60px); }
+    .hero::after { content: ''; position: absolute; bottom: -120px; left: -60px; width: 240px; height: 240px; border-radius: 50%;
+      background: #3E1D15; filter: blur(60px); }
+    .hero > * { position: relative; }
+    .logo { height: 46px; width: auto; display: block; }
+    .kicker { display: inline-block; margin-top: 26px; padding: 4px 12px; border-radius: 99px; background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15); color: var(--acento); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 14px 0 0; font-size: 27px; line-height: 1.12; font-weight: 800; letter-spacing: -.02em; }
+    .sub { margin: 10px 0 0; color: rgba(255,255,255,.75); font-size: 15px; line-height: 1.5; }
+    .card { position: relative; margin: -56px 16px 24px; background: #fff; border-radius: 24px; padding: 22px 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.08); }
+    .pasos { list-style: none; margin: 0; padding: 0; counter-reset: paso; }
+    .pasos li { counter-increment: paso; display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; font-size: 15px; line-height: 1.45; }
+    .pasos li::before { content: counter(paso); flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--naranja); color: #fff;
+      font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+    .pasos b { white-space: nowrap; }
+    .dots { display: inline-grid; place-items: center; width: 26px; height: 20px; border-radius: 6px; background: #f2f2f2; font-weight: 900; letter-spacing: 1px; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 15px 18px;
+      border: 0; border-radius: 99px; font: inherit; font-size: 16px; font-weight: 800; text-decoration: none; cursor: pointer; }
+    .btn-primario { background: var(--naranja); color: #fff; box-shadow: 0 8px 20px rgba(255,103,27,.3); }
+    .btn-primario:active { background: var(--naranja2); }
+    .btn-sec { background: #fff; color: #111; border: 1.5px solid #d7d7d9; }
+    .enlace { margin-top: 14px; width: 100%; padding: 12px 14px; border: 1px solid #e3e3e5; border-radius: 14px; background: #fafafa;
+      font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: #444; }
+    .nota { margin: 16px 4px 0; color: var(--gris); font-size: 13px; line-height: 1.5; text-align: center; }
+    .aviso { display: none; margin-top: 10px; text-align: center; font-size: 14px; font-weight: 700; color: #00A669; }
+    .cargando { display: grid; place-items: center; min-height: 100vh; background: #000; color: rgba(255,255,255,.7); font-size: 15px; }
+    .spinner { width: 42px; height: 42px; margin: 0 auto 14px; border: 4px solid rgba(255,103,27,.25); border-top-color: var(--naranja);
+      border-radius: 50%; animation: giro .8s linear infinite; }
+    @keyframes giro { to { transform: rotate(360deg); } }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- Navegador normal: pantalla de carga mientras redirige -->
+  <div id="cargando" class="cargando">
+    <div><div class="spinner"></div>Abriendo #LaJoven Underground Tour…</div>
+  </div>
+
+  <!-- Dentro de Instagram / Facebook / TikTok -->
+  <div id="inapp" hidden>
+    <header class="hero">
+      <img class="logo" src="https://raw.githubusercontent.com/Holmaaan/Logos-Fundacion/refs/heads/main/LOGO-FILARMO%CC%81NICA_3.png" alt="Filarmónica Joven de Colombia">
+      <span class="kicker">#LaJoven Underground Tour</span>
+      <h1>Abre este enlace en tu navegador</h1>
+      <p class="sub">El navegador de <span id="app">Instagram</span> no puede mostrar el formulario. Ábrelo en <span id="nav">Safari</span> y regístrate en segundos.</p>
+    </header>
+
+    <main class="card">
+      <a id="abrir" class="btn btn-primario" href="#">Abrir en <span id="nav2">Safari</span> →</a>
+
+      <ol class="pasos" id="pasos-ios" style="margin-top:14px">
+        <li><span>Toca <span class="dots">···</span> arriba a la derecha.</span></li>
+        <li><span>Elige <b>«Abrir en el navegador externo»</b>.</span></li>
+        <li><span>¡Listo! El formulario se abre en Safari.</span></li>
+      </ol>
+
+      <input id="url" class="enlace" readonly aria-label="Enlace">
+      <button id="copiar" class="btn btn-sec" type="button">Copiar enlace</button>
+      <p id="copiado" class="aviso">✓ Enlace copiado. Pégalo en Safari o Chrome.</p>
+
+      <p class="nota">¿Prefieres intentarlo aquí? <a id="aqui" href="#" style="color:#ff671b;font-weight:700">Abrir de todos modos</a></p>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      // URL del sistema (Apps Script). Si algún día cambia la implementación, actualízala aquí.
+      var SISTEMA = 'https:\/\/script.google.com/macros/s/AKfycbz4bOvRtwJgJdjizQ4eeWFFZzbU97oT89dEjfL779oPXkuYyKH_8YMH2-lfSdEFTCVJ/exec';
+      var destino = SISTEMA + (location.search || '');
+
+      var ua = navigator.userAgent || '';
+      var inApp = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|TikTok|musical_ly|Bytedance|Snapchat|LinkedInApp|Line\//i.test(ua);
+      var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var android = /Android/i.test(ua);
+
+      // Navegador normal → directo al sistema
+      if (!inApp) { location.replace(destino); return; }
+
+      var nombreApp = /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(ua) ? 'Facebook'
+        : /TikTok|musical_ly|Bytedance/i.test(ua) ? 'TikTok' : 'esta app';
+      var navegador = ios ? 'Safari' : 'Chrome';
+      // iOS 17+: «x-safari-https://» abre Safari · Android: intent a Chrome (con respaldo al mismo enlace)
+      var externo = ios
+        ? 'x-safari-' + destino
+        : 'intent://' + destino.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(destino) + ';end';
+
+      document.getElementById('cargando').hidden = true;
+      document.getElementById('inapp').hidden = false;
+      document.getElementById('app').textContent = nombreApp;
+      document.getElementById('nav').textContent = navegador;
+      document.getElementById('nav2').textContent = navegador;
+      document.getElementById('abrir').href = externo;
+      document.getElementById('aqui').href = destino;
+      document.getElementById('url').value = destino;
+      if (!ios) document.getElementById('pasos-ios').querySelector('li:nth-child(2) b').textContent = '«Abrir en Chrome»';
+
+      document.getElementById('copiar').addEventListener('click', function () {
+        var campo = document.getElementById('url');
+        var listo = function () { document.getElementById('copiado').style.display = 'block'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(destino).then(listo, function () { campo.select(); document.execCommand('copy'); listo(); });
+        } else { campo.select(); document.execCommand('copy'); listo(); }
+      });
+
+      // Intento automático de abrir el navegador externo (si el sistema lo permite)
+      setTimeout(function () { location.href = externo; }, 600);
+    })();
+  </script>
+</body>
+</html>
