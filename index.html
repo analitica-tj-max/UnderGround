@@ -14,9 +14,9 @@
     PÁGINA PUENTE · #LaJoven Underground Tour
     El navegador interno de Instagram/Facebook/TikTok en iPhone no carga las páginas de
     Google Apps Script (quedan en blanco). Esta página va en la historia de Instagram y:
-      · En un navegador normal → pasa directo al sistema (no se nota).
-      · Dentro de Instagram en iPhone → intenta abrir Safari; si no, muestra cómo hacerlo.
-      · Dentro de Instagram en Android → abre Chrome.
+      · Computador, Safari, Chrome y Android (también dentro de Instagram) → va directo al enlace del sistema.
+      · iPhone dentro de Instagram/Facebook/TikTok → muestra aquí mismo el formulario del sistema
+        (mismas hojas, mismos correos). Si no carga, explica cómo abrirlo en Safari.
     Todo lo que venga después del "?" se pasa al sistema. Ejemplos:
       .../?view=registro      → formulario de registro
       .../                    → reserva del evento activo
@@ -131,8 +131,9 @@
       // ?modo=app fuerza el formulario aquí mismo (sirve para probar desde el computador)
       var forzarApp = /[?&]modo=app(&|$)/.test(location.search);
 
-      // Navegador normal → directo al sistema
-      if (!inApp && !forzarApp) { location.replace(destino); return; }
+      // Directo al enlace del sistema en todos los casos, excepto iPhone/iPad dentro de
+      // Instagram/Facebook/TikTok: ahí ese enlace queda en blanco y el formulario se muestra aquí.
+      if (!forzarApp && !(inApp && ios)) { location.replace(destino); return; }
 
       var nombreApp = /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(ua) ? 'Facebook'
         : /TikTok|musical_ly|Bytedance/i.test(ua) ? 'TikTok' : 'esta app';
