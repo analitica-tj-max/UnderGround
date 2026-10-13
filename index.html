@@ -78,7 +78,10 @@
     <div><div class="spinner"></div>Abriendo #LaJoven Underground Tour…</div>
   </div>
 
-  <!-- Dentro de Instagram / Facebook / TikTok -->
+  <!-- Dentro de Instagram / Facebook / TikTok: el formulario se carga aquí mismo -->
+  <div id="root"></div>
+
+  <!-- Respaldo: si el formulario no carga, se explica cómo abrirlo en el navegador -->
   <div id="inapp" hidden>
     <header class="hero">
       <img class="logo" src="logo-filarmonica.png" alt="Filarmónica Joven de Colombia">
@@ -125,27 +128,128 @@
       var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var android = /Android/i.test(ua);
 
+      // ?modo=app fuerza el formulario aquí mismo (sirve para probar desde el computador)
+      var forzarApp = /[?&]modo=app(&|$)/.test(location.search);
+
       // Navegador normal → directo al sistema
-      if (!inApp) { location.replace(destino); return; }
+      if (!inApp && !forzarApp) { location.replace(destino); return; }
 
       var nombreApp = /Instagram/i.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(ua) ? 'Facebook'
         : /TikTok|musical_ly|Bytedance/i.test(ua) ? 'TikTok' : 'esta app';
       var navegador = ios ? 'Safari' : 'Chrome';
-      // iOS 17+: «x-safari-https://» abre Safari · Android: intent a Chrome (con respaldo al mismo enlace)
+      // iOS 17+: «x-safari-https://» (Instagram suele bloquearlo) · Android: intent a Chrome
       var externo = ios
         ? 'x-safari-' + destino
         : 'intent://' + destino.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(destino) + ';end';
 
-      document.getElementById('cargando').hidden = true;
-      document.getElementById('inapp').hidden = false;
-      document.getElementById('app').textContent = nombreApp;
-      document.getElementById('nav').textContent = navegador;
-      ['nav2', 'nav3', 'nav4'].forEach(function (id) { document.getElementById(id).textContent = navegador; });
-      [].forEach.call(document.querySelectorAll('.app-nombre'), function (el) { el.textContent = nombreApp; });
-      document.getElementById('abrir').href = externo;
-      document.getElementById('aqui').href = destino;
-      document.getElementById('url').value = destino;
-      if (!ios) document.getElementById('opcion').textContent = '«Abrir en Chrome»';
+      /* ---------- 1) Cargar el formulario aquí mismo ---------- */
+
+      var base = location.origin + location.pathname;
+      var listo = false;
+
+      function cargarScript(src) {
+        return new Promise(function (ok, mal) {
+          var s = document.createElement('script');
+          s.src = src; s.onload = ok; s.onerror = function () { mal(new Error('No cargó ' + src)); };
+          document.body.appendChild(s);
+        });
+      }
+
+      /** Enlaces del sistema → mismos enlaces pero en esta página (para no salir de Instagram). */
+      function aEstaPagina(url, sistemaUrl) {
+        if (!url || typeof url !== 'string') return url;
+        var cortes = [sistemaUrl, SISTEMA].filter(Boolean);
+        for (var i = 0; i < cortes.length; i++) {
+          if (url.indexOf(cortes[i]) === 0) {
+            var q = url.slice(cortes[i].length);
+            return base + (q.charAt(0) === '?' ? q : '');
+          }
+        }
+        return url;
+      }
+
+      /** Reemplaza google.script.run: las llamadas van al sistema por POST (sin el marco de Google). */
+      function instalarPuente(sistemaUrl) {
+        function corredor(ok, mal) {
+          return new Proxy({}, {
+            get: function (_, fn) {
+              if (fn === 'withSuccessHandler') return function (f) { return corredor(f, mal); };
+              if (fn === 'withFailureHandler') return function (f) { return corredor(ok, f); };
+              return function () {
+                var args = [].slice.call(arguments);
+                fetch(SISTEMA, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }) })
+                  .then(function (r) { return r.json(); })
+                  .then(function (res) {
+                    if (res && res.linkReserva) res.linkReserva = aEstaPagina(res.linkReserva, sistemaUrl);
+                    if (ok) ok(res);
+                  })
+                  .catch(function (err) { if (mal) mal(err); });
+              };
+            },
+          });
+        }
+        window.google = { script: { run: corredor(null, null) } };
+      }
+
+      function cargarFormulario() {
+        var raiz = document.getElementById('root');
+        document.getElementById('cargando').hidden = false;
+        var q = location.search ? location.search.slice(1) + '&' : '';
+        var boot;
+        window.__ugBoot = function (b) { boot = b; };
+
+        return cargarScript(SISTEMA + '?' + q + 'recurso=boot&callback=__ugBoot')
+          .then(function () {
+            if (!boot) throw new Error('Sin datos del sistema');
+            boot.links = boot.links || {};
+            boot.links.registro = base + '?view=registro';
+            window.__BOOT__ = boot;
+            document.title = (boot.app && boot.app.nombre) || document.title;
+            var fuente = boot.fuente || 'Montserrat';
+            document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="https:\/\/fonts.googleapis.com/css2?family=' +
+              encodeURIComponent(fuente).replace(/%20/g, '+') + ':wght@400;500;600;700;800&display=swap">');
+            return cargarScript('https:\/\/cdn.tailwindcss.com').then(function () {
+              window.tailwind.config = {
+                theme: { extend: {
+                  colors: { ug: boot.theme || {} },
+                  fontFamily: { sans: [fuente, 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+                } },
+              };
+            });
+          })
+          .then(function () { return cargarScript('https:\/\/cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js'); })
+          .then(function () { return cargarScript('https:\/\/cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js'); })
+          .then(function () { return cargarScript('https:\/\/cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js'); })
+          .then(function () {
+            instalarPuente(boot.sistemaUrl);
+            document.body.className = 'bg-ug-fondo font-sans text-ug-negro antialiased';
+            document.body.style.background = '';
+            return cargarScript(SISTEMA + '?recurso=app');
+          })
+          .then(function () {
+            if (!window.__ugListo) throw new Error('El formulario no inició');
+            listo = true;
+            document.getElementById('cargando').hidden = true;
+            raiz.hidden = false;
+          });
+      }
+
+      /* ---------- 2) Respaldo: explicar cómo abrirlo en el navegador ---------- */
+
+      function mostrarInstrucciones() {
+        if (listo) return;
+        document.getElementById('cargando').hidden = true;
+        document.getElementById('root').hidden = true;
+        document.getElementById('inapp').hidden = false;
+        document.getElementById('app').textContent = nombreApp;
+        document.getElementById('nav').textContent = navegador;
+        ['nav2', 'nav3', 'nav4'].forEach(function (id) { document.getElementById(id).textContent = navegador; });
+        [].forEach.call(document.querySelectorAll('.app-nombre'), function (el) { el.textContent = nombreApp; });
+        document.getElementById('abrir').href = externo;
+        document.getElementById('aqui').href = destino;
+        document.getElementById('url').value = destino;
+        if (!ios) document.getElementById('opcion').textContent = '«Abrir en Chrome»';
+      }
 
       // Si tras tocar «Intentar abrir» seguimos aquí, la app lo bloqueó: se explica qué hacer
       document.getElementById('abrir').addEventListener('click', function () {
@@ -160,14 +264,14 @@
 
       document.getElementById('copiar').addEventListener('click', function () {
         var campo = document.getElementById('url');
-        var listo = function () { document.getElementById('copiado').style.display = 'block'; };
+        var hecho = function () { document.getElementById('copiado').style.display = 'block'; };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(destino).then(listo, function () { campo.select(); document.execCommand('copy'); listo(); });
-        } else { campo.select(); document.execCommand('copy'); listo(); }
+          navigator.clipboard.writeText(destino).then(hecho, function () { campo.select(); document.execCommand('copy'); hecho(); });
+        } else { campo.select(); document.execCommand('copy'); hecho(); }
       });
 
-      // Intento automático de abrir el navegador externo (si el sistema lo permite)
-      setTimeout(function () { location.href = externo; }, 600);
+      cargarFormulario().catch(function (err) { console.error(err); mostrarInstrucciones(); });
+      setTimeout(mostrarInstrucciones, 25000); // si a los 25 s no cargó, mostrar el respaldo
     })();
   </script>
 </body>
