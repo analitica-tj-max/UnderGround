@@ -59,6 +59,17 @@
       border-radius: 50%; animation: giro .8s linear infinite; }
     @keyframes giro { to { transform: rotate(360deg); } }
     [hidden] { display: none !important; }
+    .titulo-pasos { margin: 0 0 4px; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--naranja); }
+    .separador { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; color: var(--gris); font-size: 13px; }
+    .separador::before, .separador::after { content: ''; flex: 1; height: 1px; background: #e6e6e8; }
+    .aviso-naranja { color: #b44a12; background: #fff1e8; border-radius: 14px; padding: 12px; font-weight: 600; line-height: 1.5; }
+    .flecha { position: fixed; top: 6px; right: 10px; z-index: 10; display: flex; align-items: flex-start; gap: 4px;
+      animation: rebote 1.1s ease-in-out infinite; pointer-events: none; }
+    .flecha-texto { margin-top: 18px; padding: 6px 10px; border-radius: 99px; background: var(--naranja); color: #fff;
+      font-size: 13px; font-weight: 800; box-shadow: 0 6px 16px rgba(255,103,27,.4); white-space: nowrap; }
+    .dots-claro { background: rgba(255,255,255,.25); color: #fff; height: 18px; }
+    @keyframes rebote { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(4px, -6px); } }
+    @media (prefers-reduced-motion: reduce) { .flecha { animation: none; } }
   </style>
 </head>
 <body>
@@ -77,20 +88,30 @@
     </header>
 
     <main class="card">
-      <a id="abrir" class="btn btn-primario" href="#">Abrir en <span id="nav2">Safari</span> →</a>
-
-      <ol class="pasos" id="pasos-ios" style="margin-top:14px">
-        <li><span>Toca <span class="dots">···</span> arriba a la derecha.</span></li>
-        <li><span>Elige <b>«Abrir en el navegador externo»</b>.</span></li>
-        <li><span>¡Listo! El formulario se abre en Safari.</span></li>
+      <p class="titulo-pasos">Así de fácil:</p>
+      <ol class="pasos" id="pasos-ios">
+        <li><span>Toca <span class="dots">···</span> <b>arriba a la derecha</b> de tu pantalla.</span></li>
+        <li><span>Elige <b id="opcion">«Abrir en el navegador externo»</b>.</span></li>
+        <li><span>¡Listo! El formulario se abre en <span id="nav3">Safari</span>.</span></li>
       </ol>
 
+      <p class="separador"><span>o también</span></p>
+      <button id="copiar" class="btn btn-primario" type="button">Copiar enlace</button>
+      <p id="copiado" class="aviso">✓ Enlace copiado. Abre <span id="nav4">Safari</span>, pégalo en la barra de direcciones y listo.</p>
       <input id="url" class="enlace" readonly aria-label="Enlace">
-      <button id="copiar" class="btn btn-sec" type="button">Copiar enlace</button>
-      <p id="copiado" class="aviso">✓ Enlace copiado. Pégalo en Safari o Chrome.</p>
+
+      <a id="abrir" class="btn btn-sec" href="#">Intentar abrir en <span id="nav2">Safari</span></a>
+      <p id="bloqueado" class="aviso aviso-naranja">Tu versión de <span class="app-nombre">Instagram</span> no permite abrirlo automáticamente.
+        Usa el botón <span class="dots">···</span> de arriba o copia el enlace.</p>
 
       <p class="nota">¿Prefieres intentarlo aquí? <a id="aqui" href="#" style="color:#ff671b;font-weight:700">Abrir de todos modos</a></p>
     </main>
+
+    <!-- Flecha que señala el menú ··· de Instagram (arriba a la derecha, fuera de la página) -->
+    <div class="flecha" aria-hidden="true">
+      <span class="flecha-texto">Toca aquí <span class="dots dots-claro">···</span></span>
+      <svg viewBox="0 0 40 40" width="38" height="38"><path d="M8 32 L32 8 M14 8 H32 V26" fill="none" stroke="#ff671b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
   </div>
 
   <script>
@@ -119,11 +140,23 @@
       document.getElementById('inapp').hidden = false;
       document.getElementById('app').textContent = nombreApp;
       document.getElementById('nav').textContent = navegador;
-      document.getElementById('nav2').textContent = navegador;
+      ['nav2', 'nav3', 'nav4'].forEach(function (id) { document.getElementById(id).textContent = navegador; });
+      [].forEach.call(document.querySelectorAll('.app-nombre'), function (el) { el.textContent = nombreApp; });
       document.getElementById('abrir').href = externo;
       document.getElementById('aqui').href = destino;
       document.getElementById('url').value = destino;
-      if (!ios) document.getElementById('pasos-ios').querySelector('li:nth-child(2) b').textContent = '«Abrir en Chrome»';
+      if (!ios) document.getElementById('opcion').textContent = '«Abrir en Chrome»';
+
+      // Si tras tocar «Intentar abrir» seguimos aquí, la app lo bloqueó: se explica qué hacer
+      document.getElementById('abrir').addEventListener('click', function () {
+        setTimeout(function () {
+          if (document.visibilityState === 'visible') {
+            var aviso = document.getElementById('bloqueado');
+            aviso.style.display = 'block';
+            aviso.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 1500);
+      });
 
       document.getElementById('copiar').addEventListener('click', function () {
         var campo = document.getElementById('url');
