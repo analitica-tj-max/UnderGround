@@ -18,8 +18,9 @@
       · iPhone dentro de Instagram/Facebook/TikTok → muestra aquí mismo el formulario del sistema
         (mismas hojas, mismos correos). Si no carga, explica cómo abrirlo en Safari.
     Todo lo que venga después del "?" se pasa al sistema. Ejemplos:
+      .../                    → formulario de registro (por defecto)
       .../?view=registro      → formulario de registro
-      .../                    → reserva del evento activo
+      .../?evento=UGT2026-010 → reserva de ese evento
   -->
   <style>
     :root { --naranja: #ff671b; --naranja2: #ff8535; --acento: #ffb535; --gris: #78787b; --fondo: #efefef; }
@@ -121,7 +122,10 @@
     (function () {
       // URL del sistema (Apps Script). Si algún día cambia la implementación, actualízala aquí.
       var SISTEMA = 'https:\/\/script.google.com/a/macros/fundacionbd.org/s/AKfycbz4bOvRtwJgJdjizQ4eeWFFZzbU97oT89dEjfL779oPXkuYyKH_8YMH2-lfSdEFTCVJ/exec';
-      var destino = SISTEMA + (location.search || '');
+      // Sin vista indicada (?view=, ?evento=, ?rid=) → se abre el formulario de Registro
+      var busqueda = location.search || '';
+      if (!/[?&](view|evento|rid)=/.test(busqueda)) busqueda = (busqueda ? busqueda + '&' : '?') + 'view=registro';
+      var destino = SISTEMA + busqueda;
 
       var ua = navigator.userAgent || '';
       var inApp = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|TikTok|musical_ly|Bytedance|Snapchat|LinkedInApp|Line\//i.test(ua);
@@ -195,7 +199,7 @@
       function cargarFormulario() {
         var raiz = document.getElementById('root');
         document.getElementById('cargando').hidden = false;
-        var q = location.search ? location.search.slice(1) + '&' : '';
+        var q = busqueda.slice(1) + '&';
         var boot;
         window.__ugBoot = function (b) { boot = b; };
 
